@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.image.*?>
+<?import java.lang.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="360.0" prefWidth="560.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="WordSquare.WordSquareController">
+   <children>
+      <SplitPane dividerPositions="0.4265232974910394" layoutX="-3.0" layoutY="-8.0" prefHeight="360.0" prefWidth="560.0">
+        <items>
+          <AnchorPane fx:id="searchPane" minHeight="0.0" minWidth="0.0" prefHeight="359.0" prefWidth="217.0">
+               <children>
+                  <ChoiceBox fx:id="wordPosition" layoutX="31.0" layoutY="107.0" prefHeight="25.0" prefWidth="46.0" />
+                  <TextField fx:id="textIn" layoutX="76.0" layoutY="107.0" onAction="#setSquareWord" prefHeight="25.0" prefWidth="73.0" />
+                  <Button layoutX="150.0" layoutY="107.0" mnemonicParsing="false" onMouseClicked="#setSquareWord" prefHeight="25.0" prefWidth="73.0" text="Send" />
+                  <Button layoutX="150.0" layoutY="132.0" mnemonicParsing="false" onMouseClicked="#buildWordSquares" prefHeight="25.0" prefWidth="73.0" text="Search" />
+                  <Button fx:id="clearButton" layoutX="149.0" layoutY="179.0" mnemonicParsing="false" onAction="#clearAll" prefHeight="25.0" prefWidth="73.0" text="Clear" />
+               </children>
+            </AnchorPane>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="359.0" prefWidth="382.0">
+               <children>
+                  <Button layoutX="137.0" layoutY="268.0" mnemonicParsing="false" onMouseClicked="#showPreviousSolution" prefHeight="25.0" prefWidth="73.0" text="Previous" />
+                  <Button layoutX="212.0" layoutY="268.0" mnemonicParsing="false" onMouseClicked="#showNextSolution" prefHeight="25.0" prefWidth="73.0" text="Next" />
+                  <TableView fx:id="textOut" layoutX="57.0" layoutY="76.0" prefHeight="184.0" prefWidth="219.0">
+                    <columns>
+                      <TableColumn fx:id="c0" prefWidth="30" />
+                      <TableColumn fx:id="c1" prefWidth="30" text="1" />
+                      <TableColumn fx:id="c2" prefWidth="30" text="2" />
+                      <TableColumn fx:id="c3" prefWidth="30" text="3" />
+                      <TableColumn fx:id="c4" prefWidth="30" text="4" />
+                      <TableColumn fx:id="c5" prefWidth="30" text="5" />
+                      <TableColumn fx:id="c6" prefWidth="30" text="6" />
+                    </columns>
+                  </TableView>
+                  <Label layoutX="80.0" layoutY="272.0" text="of" />
+                  <Label fx:id="totalSol" layoutX="103.0" layoutY="272.0" prefHeight="17.0" prefWidth="34.0" text="0" />
+                  <TextField fx:id="solPosDisplay" alignment="CENTER_RIGHT" layoutX="21.0" layoutY="268.0" onAction="#jumpToSolution" prefHeight="25.0" prefWidth="52.0" text="0" />
+                  <ProgressBar fx:id="progressBar" layoutX="62.0" layoutY="49.0" prefHeight="18.0" prefWidth="150.0" progress="0.0" />
+                  <ChoiceBox fx:id="sortStyle" layoutX="136.0" layoutY="300.0" prefHeight="25.0" prefWidth="91.0" />
+                  <Button fx:id="sortButton" layoutX="226.0" layoutY="300.0" mnemonicParsing="false" onAction="#sortSolutions" text="Go" />
+                  <Label layoutX="73.0" layoutY="304.0" prefHeight="17.0" prefWidth="61.0" text="Rank By:" />
+                  <CheckBox fx:id="lock0" layoutX="33.0" layoutY="105.0" mnemonicParsing="false" />
+                  <CheckBox fx:id="lock1" layoutX="33.0" layoutY="128.0" mnemonicParsing="false" />
+                  <CheckBox fx:id="lock2" layoutX="33.0" layoutY="154.0" mnemonicParsing="false" />
+                  <CheckBox fx:id="lock3" layoutX="33.0" layoutY="177.0" mnemonicParsing="false" />
+                  <CheckBox fx:id="lock4" layoutX="33.0" layoutY="200.0" mnemonicParsing="false" />
+                  <CheckBox fx:id="lock5" layoutX="33.0" layoutY="225.0" mnemonicParsing="false" />
+                  <Button fx:id="cancelButton" layoutX="216.0" layoutY="46.0" mnemonicParsing="false" onAction="#cancelSearch" text="Cancel" />
+               </children>
+            </AnchorPane>
+        </items>
+      </SplitPane>
+   </children>
+</Pane>
