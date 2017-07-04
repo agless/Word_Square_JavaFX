@@ -142,14 +142,20 @@ public class WordSquare {
             * ACTUALLY:
             * Dictionary is a bottleneck.  If we try to rely on a single,
             * shared dictionary object, multithreaded searches probably won't be any
-            * faster.  Maybe the better solution is to give each search thread its own
+            * faster than single-thread.  Maybe the better solution is to give each search thread its own
             * dictionary object to work with.  No changes would be necessary here or in
             * the dictionary class to pull this off.
             *
             * The question then becomes, will instantiating a fresh dictionary object for
             * each of the thousands of searchRows[0][] branches cause enough overhead to make
             * multithreaded searching not worthwhile?  Note that only the first instance
-            * of Dictionary needs to read the word banks from disk.*/
+            * of Dictionary needs to read the word banks from disk.
+            *
+            * Seems like the answer is to create a fixed thread pool here.
+            * Create a child of WordSquare that implements runnable and does the while loop
+            * (except checks for pos '1' rather than '0').  A thread will be created for each searchRows[0][] match.
+            * All of the threads will be submitted to the thread pool.  Will have to track progress (threads processed
+            * / total initial threads).  */
 
             String newWord = dict.getNextMatch(dictPos, len);
 
