@@ -18,9 +18,8 @@ public class WordSquareController {
     protected static ArrayList<Solution> solutionList = new ArrayList<Solution>();
     private int solPos = 0;
     private String[] squareWords;
-    private Thread searchThread;
     private SearchWatcher searchWatcher = new SearchWatcher();
-    private boolean firstSolultionsUpdate = true;
+    private boolean firstSolutionsUpdate = true;
     private static StageReference stageReference = new StageReference();
     private DisplayRow r1 = new DisplayRow();
     private DisplayRow r2 = new DisplayRow();
@@ -58,13 +57,6 @@ public class WordSquareController {
 
     //Initialize elements
     public void initialize() {
-        //give searchWatcher a dummy thread to get progressBar locked on
-        searchThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                //do nothing.
-            }
-        });
         searchWatcher.reset();
         searchWatcher.start();
 
@@ -161,10 +153,10 @@ public class WordSquareController {
     public void buildWordSquares() {
         //Clear old solution list, if any
         solutionList.clear();
-        ws.clearSolutions();
         solPos = 0;
         solPosDisplay.setText("0");
         updateSolutionCount();
+        searchPane.setDisable(true);
 
         //Loop through the checkboxes to set fixed words and blanks
         CheckBox[] lockList = {lock0, lock1, lock2, lock3, lock4, lock5};
@@ -176,15 +168,7 @@ public class WordSquareController {
                 ws.setWord(null, i);
             }
         }
-
-        searchThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                ws.buildAllSolutions();
-            }
-        });
-
-        searchThread.start();
+        ws.buildAllSolutions();
         searchWatcher.reset();
         searchWatcher.start();
     }
@@ -192,12 +176,13 @@ public class WordSquareController {
     public void cancelSearch() {
         ws.killSearch();
         sortSolutions();
+        ws = new WordSquare();
     }
 
     public void clearAll() {
         cancelSearch();
-        ws.clearSquareWords();
-        ws.clearSolutions();
+        ws.killSearch();
+        ws = new WordSquare();
         clearLocalSquareWords();
         solutionList.clear();
         updateDisplay(squareWords);
@@ -210,9 +195,9 @@ public class WordSquareController {
     public void updateSolutionCount() {
         int size = solutionList.size();
         totalSol.setText(Integer.toString(size));
-        if ((size > 0) && (firstSolultionsUpdate)) {
+        if ((size > 0) && (firstSolutionsUpdate)) {
             showSolution();
-            firstSolultionsUpdate = false;
+            firstSolutionsUpdate = false;
         }
     }
 
@@ -327,44 +312,36 @@ public class WordSquareController {
             return new Task<Void>() {
                 @Override
                 protected Void call() throws Exception {
-                    updateProgress(0,1);
-                    searchPane.setDisable(true);
-                    Boolean kill = true;
-
-                    if (searchThread.isAlive()) {
-                        kill = false;
-                    }
-
-                    while (!kill) {
-                        if (ws.solutionList.size() != solutionList.size()) {
-                            solutionList = ws.getSolutionList();
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    updateSolutionCount();
-                                }
-                            });
-                        }
-
-                        if (searchThread.isAlive()) {
-                            int[] progress = ws.getSearchProgress();
-                            updateProgress(progress[0], progress[1]);
-                            try {
-                                Thread.sleep(500);
-                            } catch (Exception e) {
-                                e.printStackTrace();
+                    int [] progress;
+                    do {
+                        progress = ws.getSearchProgress();
+                        updateProgress(progress[0], progress[1]);
+                        if (firstSolutionsUpdate) {
+                            if (ws.getSolutionList().size() > 0) {
+                                firstSolutionsUpdate = false;
                             }
-                        } else {
-                            updateProgress(1,1);
-                            kill = true;
                         }
-                    }
+                        solutionList = ws.getSolutionList();
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                updateSolutionCount();
+                            }
+                        });
+                        try {
+                            Thread.sleep(200);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } while (progress[0] < progress[1]);
 
                     sortStyle.setDisable(false);
                     sortButton.setDisable(false);
                     searchPane.setDisable(false);
                     if (solPos == 0) { sortSolutions(); }
-                    firstSolultionsUpdate = true;
+                    firstSolutionsUpdate = true;
+                    ws.killSearch();
+                    ws = new WordSquare();
                     return null;
                 }
             };
