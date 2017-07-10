@@ -144,12 +144,14 @@ public class WordSquare {
             }
         }
 
+        int threadCount = branchList.size();
+
         //Set initial search progress (0 / branchList.size())
         searchProgress[0] = 0;
-        searchProgress[1] = branchList.size();
+        searchProgress[1] = threadCount;
 
         //start the search threads
-        for (int i = 0; i < branchList.size(); i++) {
+        for (int i = 0; i < threadCount; i++) {
             SearchThread newBranch = new SearchThread(this);
             searchPool.submit(newBranch);
         }
