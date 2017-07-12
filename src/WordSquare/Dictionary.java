@@ -1,7 +1,6 @@
 package WordSquare;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -23,11 +22,9 @@ class Dictionary {
     private static ArrayList<String> wb4 = new ArrayList<>();
     private static ArrayList<String> wb5 = new ArrayList<>();
     private static ArrayList<String> wb6 = new ArrayList<>();
-    private Pattern searchPattern;
-    private int dictionaryPos;
 
     public Dictionary() {
-        //Load wordBank into memory, but only once
+        //Load wordBank into memory, but only if it's not already loaded
         if (wb2.size() <= 0) {
             try {
                 InputStreamReader ir = new InputStreamReader(getClass().getResourceAsStream(WORDBANK));
@@ -55,7 +52,7 @@ class Dictionary {
                 //Randomize word banks for smoother progress bar movement
                 ArrayList[] wbRef = {wb2, wb3, wb4, wb5, wb6};
                 for (int i = 0; i < 5; i++) {
-                    ArrayList<String> wb = wbRef[i];
+                    ArrayList wb = wbRef[i];
                     long seed = System.nanoTime();
                     Collections.shuffle(wb, new Random(seed));
 
@@ -65,7 +62,7 @@ class Dictionary {
     }
 
     //Build a regular expression for searchPattern.
-    public void buildSearchPattern(String[] squareWords, int pos, int len) {
+    public Pattern buildSearchPattern(String[] squareWords, int pos, int len) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < len; i++) {
             String word = squareWords[i];
@@ -77,7 +74,9 @@ class Dictionary {
             }
         }
         String searchString = sb.toString();
+        Pattern searchPattern = null;
         searchPattern = searchPattern.compile(searchString);
+        return searchPattern;
     }
 
     //spot check a user-input word to see if it fits a partial word square
@@ -93,53 +92,57 @@ class Dictionary {
             }
         }
 
-        buildSearchPattern(squareWords, pos, len);
+        Pattern searchPattern = buildSearchPattern(squareWords, pos, len);
         Matcher m = searchPattern.matcher(word);
         return m.matches();
     }
 
     //Find the next word in the wordBank that matches the current searchPattern.
-    public String getNextMatch(int pos, int newLen) {
+    public Match getNextMatch(Pattern searchPattern, int pos, int len) {
         ArrayList<String> wordBank;
-        dictionaryPos = pos;
-        int len = newLen;
+        int dictionaryPos = pos;
         switch (len) {
-            case 2: wordBank = wb2; break;
-            case 3: wordBank = wb3; break;
-            case 4: wordBank = wb4; break;
-            case 5: wordBank = wb5; break;
-            case 6: wordBank = wb6; break;
-            default: System.out.println("Dictioanry:  Invalid word length."); return null;
+            case 2:
+                wordBank = wb2;
+                break;
+            case 3:
+                wordBank = wb3;
+                break;
+            case 4:
+                wordBank = wb4;
+                break;
+            case 5:
+                wordBank = wb5;
+                break;
+            case 6:
+                wordBank = wb6;
+                break;
+            default:
+                System.out.println("Dictioanry:  Invalid word length.");
+                return null;
         }
         //Find the next match and return it.
-        //buildSearchPattern() must be run first!!
-        boolean matchFound = false;
-        while (matchFound == false) {  //change to while (true)??
+        while (true) {
 
             if (dictionaryPos >= wordBank.size()) {
-                String testWord = null;
-                return testWord;
+                return null;
             }
 
             String testWord = wordBank.get(dictionaryPos);
             Matcher m = searchPattern.matcher(testWord);
 
             if (m.matches()) {
-                return testWord;
+                Match match = new Match(testWord, dictionaryPos);
+                return match;
             } else {
                 dictionaryPos++;
             }
         }
-        return null;
+
     }
 
-    //Report the wordBank position for the last match
-    public int getDictionaryPos() {
-        return dictionaryPos;
-    }  //maybe this should be changed so that find next match returns a position and this one returns the corresponding word?
-
     public int getDictionaryLength(int len) {
-        ArrayList<String> wordBank = new ArrayList<>();
+        ArrayList<String> wordBank;
         switch (len) {
             case 2: wordBank = wb2; break;
             case 3: wordBank = wb3; break;

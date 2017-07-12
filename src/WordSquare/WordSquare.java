@@ -1,24 +1,29 @@
 package WordSquare;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 
-/**
- * Created by andyg on 5/29/2017.
- */
 public class WordSquare {
     private Dictionary dict = new Dictionary();
-    protected static Score scorer = new Score();
-    protected static ArrayList<Solution> solutionList = new ArrayList<>();
+    private ArrayList<Solution> solutionList = new ArrayList<Solution>();
     private String[] squareWords = new String[6];
-    private boolean searchActive = false;
-    private int[] searchProgress = new int[2];
-    private Boolean kill = false;
+    private int[][] searchRows;
+    private ArrayList<String> branchList = new ArrayList<>();
+    private int[] searchProgress = {0,0};
+    private ExecutorService searchPool = Executors.newFixedThreadPool(6);
+    private final Object squareWordsLock = new Object();
+    private final Object searchRowsLock = new Object();
+    private final Object branchListLock = new Object();
+    private final Object addSolutionLock = new Object();
+    private final Object searchThreadCompleteLock = new Object();
+
 
     public void killSearch() {
-        if (searchActive) {
-            kill = true;
-        }
+        searchPool.shutdownNow();
+        searchProgress[0] = 1;
+        searchProgress[1] = 1;
     }
 
     public void clearSquareWords() {
@@ -38,12 +43,34 @@ public class WordSquare {
     }
 
     public Solution getSolution(int pos) {
-        Solution solution = solutionList.get(pos);
-        return solution;
+        return solutionList.get(pos);
     }
 
     public String[] getSquareWords() {
-        return squareWords.clone();
+        synchronized (squareWordsLock) {  //isn't this the same as synchronizing the method since there's only on lock to give out?
+            return squareWords.clone();
+        }
+    }
+
+    public int[][] getSearchRows() {
+        synchronized (searchRowsLock) {
+            int[][] copy = new int[searchRows.length][];
+            for (int i = 0; i < searchRows.length; i++) {
+                copy[i] = Arrays.copyOf(searchRows[i], searchRows[i].length);
+            }
+            return copy;
+        }
+    }
+
+    public String getBranchWord() {
+        synchronized (branchListLock) {
+            String branchWord = null;
+            if (branchList.size() > 0) {
+                branchWord = branchList.get(0);
+                branchList.remove(0);
+            }
+            return branchWord;
+        }
     }
 
     public ArrayList<Solution> getSolutionList() {
@@ -55,10 +82,19 @@ public class WordSquare {
     }
 
     public int[] getSearchProgress() {
-        if (searchActive == true) {
-            return searchProgress.clone();
-        } else {
-            return null;
+        return searchProgress.clone();
+    }
+
+    public void addSolution(Solution sol) {
+        synchronized (addSolutionLock) {
+            solutionList.add(sol);
+        }
+    }
+
+    public void searchThreadComplete() {
+        synchronized (searchThreadCompleteLock) {
+            searchProgress[0]++;
+            //System.out.println(searchProgress[0] + " " + searchProgress[1]);
         }
     }
 
@@ -99,7 +135,7 @@ public class WordSquare {
         if (searchWordCount == 0) { return; }
 
         //make searchRows[squareWords position][current wordBank position][difficulty]
-        int[][] searchRows = new int[searchWordCount][3];
+        searchRows = new int[searchWordCount][3];
         int searchRowPos = 0;
         for (int i = 0; i < len; i++) {
             if (squareWords[i] == null) {
@@ -110,86 +146,33 @@ public class WordSquare {
             }
         }
 
-        //Rank searchRows by difficulty for faster searches (cut branches, not leaves)
+        //Sort searchRows by difficulty for faster searches (cut branches, not leaves)
         //(lower score is more difficult)
         Arrays.sort(searchRows, (a,b) -> Integer.compare(a[2], b[2]));
 
-        //Set initial search progress (0 / wordBank length)
-        searchProgress[0] = 0;
-        searchProgress[1] = dict.getDictionaryLength(len);
-
-        int pos = 0;
-        int dictPos;
-        searchActive = true;
-
-        while ((pos >= 0) && (!kill)) {
-            //Recursively iterate through each row in searchRow
-            squarePos = searchRows[pos][0];
-            squareWords[squarePos] = null;
-            dictPos = searchRows[pos][1];
-
-            dict.buildSearchPattern(squareWords, squarePos, len);
-
-            /*This should be changed so that dictionary returns the position, rather
-            * than the word.  Idea is to make this threadsafe so that eventually
-            * there will be multiple simultaneous search threads handed out based on
-            * unique searchRows[0][] matches.
-            * Once this is implementd, the check will be for if (newWord == -1) to show
-            * that end of wordBank was reached without a match.
-            * Dictionary will return position, then we will request the word at that
-            * position to add to squareWords.
-            *
-            * ACTUALLY:
-            * Dictionary is a bottleneck.  If we try to rely on a single,
-            * shared dictionary object, multithreaded searches probably won't be any
-            * faster than single-thread.  Maybe the better solution is to give each search thread its own
-            * dictionary object to work with.  No changes would be necessary here or in
-            * the dictionary class to pull this off.
-            *
-            * The question then becomes, will instantiating a fresh dictionary object for
-            * each of the thousands of searchRows[0][] branches cause enough overhead to make
-            * multithreaded searching not worthwhile?  Note that only the first instance
-            * of Dictionary needs to read the word banks from disk.
-            *
-            * Seems like the answer is to create a fixed thread pool here.
-            * Create a child of WordSquare that implements runnable and does the while loop
-            * (except checks for pos '1' rather than '0').  A thread will be created for each searchRows[0][] match.
-            * All of the threads will be submitted to the thread pool.  Will have to track progress (threads processed
-            * / total initial threads).  */
-
-            String newWord = dict.getNextMatch(dictPos, len);
-
-            if (newWord == null) { //end of wordBank reached without a match
-                //set dictPos back to zero for this failed row
-                searchRows[pos][1] = 0;
-                pos--; //drop down a row to search the next branch
-
+        //get all searchRows[0][] words and add them to branchList
+        Pattern searchPattern = dict.buildSearchPattern(squareWords, searchRows[0][0], len);
+        boolean matchFound = true;
+        while (matchFound) {
+            Match match = dict.getNextMatch(searchPattern, searchRows[0][1], len);
+            if (match == null) {
+                matchFound = false;
             } else {
-                //Add the newWord to squareWords
-                squareWords[squarePos] = newWord;
-                //Get and save the new dictioary position for this row
-                dictPos = dict.getDictionaryPos();
-                if (pos == 0) { searchProgress[0] = dictPos; }
-                searchRows[pos][1] = (dictPos + 1);
-                pos++;
-                if (pos == searchRows.length) { //a complete solution has been found
-                    //Make a solution object and add it to the solutions list.
-                    //Solution object needs an array with no empty spaces
-                    String[] solWords = new String[len];
-                    for (int i = 0; i < len; i++) {
-                        solWords[i] = squareWords[i];
-                    }
-                    Solution sol = new Solution(solWords, scorer);
-                    solutionList.add(sol);
-                    //Drop back down to keep searching
-                    pos--;
-                }
+                branchList.add(match.getWord());
+                searchRows[0][1] = (match.getDictPos() + 1);
             }
         }
-        kill = false;
-        searchActive = false;
-        for (int i = 0; i < 6; i++) {
-            squareWords[i] = null;
+
+        int threadCount = branchList.size();
+
+        //Set initial search progress (0 / threadCount)
+        searchProgress[0] = 0;
+        searchProgress[1] = threadCount;
+
+        //start the search threads
+        for (int i = 0; i < threadCount; i++) {
+            SearchThread newBranch = new SearchThread(this);
+            searchPool.submit(newBranch);
         }
     }
 
@@ -232,5 +215,4 @@ public class WordSquare {
         }
         return difficulty;
     }
-
 }
