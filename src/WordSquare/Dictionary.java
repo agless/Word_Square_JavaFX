@@ -52,7 +52,7 @@ class Dictionary {
                 //Randomize word banks for smoother progress bar movement
                 ArrayList[] wbRef = {wb2, wb3, wb4, wb5, wb6};
                 for (int i = 0; i < 5; i++) {
-                    ArrayList<String> wb = wbRef[i];
+                    ArrayList wb = wbRef[i];
                     long seed = System.nanoTime();
                     Collections.shuffle(wb, new Random(seed));
 
@@ -62,7 +62,7 @@ class Dictionary {
     }
 
     //Build a regular expression for searchPattern.
-    public synchronized Pattern buildSearchPattern(String[] squareWords, int pos, int len) {
+    public Pattern buildSearchPattern(String[] squareWords, int pos, int len) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < len; i++) {
             String word = squareWords[i];
@@ -98,19 +98,31 @@ class Dictionary {
     }
 
     //Find the next word in the wordBank that matches the current searchPattern.
-    public synchronized Match getNextMatch(Pattern searchPattern, int pos, int len) {
+    public Match getNextMatch(Pattern searchPattern, int pos, int len) {
         ArrayList<String> wordBank;
         int dictionaryPos = pos;
         switch (len) {
-            case 2: wordBank = wb2; break;
-            case 3: wordBank = wb3; break;
-            case 4: wordBank = wb4; break;
-            case 5: wordBank = wb5; break;
-            case 6: wordBank = wb6; break;
-            default: System.out.println("Dictioanry:  Invalid word length."); return null;
+            case 2:
+                wordBank = wb2;
+                break;
+            case 3:
+                wordBank = wb3;
+                break;
+            case 4:
+                wordBank = wb4;
+                break;
+            case 5:
+                wordBank = wb5;
+                break;
+            case 6:
+                wordBank = wb6;
+                break;
+            default:
+                System.out.println("Dictioanry:  Invalid word length.");
+                return null;
         }
         //Find the next match and return it.
-        while (true) {  //change to while (true)??
+        while (true) {
 
             if (dictionaryPos >= wordBank.size()) {
                 return null;
@@ -126,6 +138,7 @@ class Dictionary {
                 dictionaryPos++;
             }
         }
+
     }
 
     public int getDictionaryLength(int len) {

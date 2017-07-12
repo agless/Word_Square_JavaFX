@@ -2,7 +2,7 @@ package WordSquare;
 
 import java.util.regex.Pattern;
 
-public class SearchThread implements Runnable {
+public class SearchThread implements Runnable {  //better to extend Thread?
     private WordSquare ws;
 
     SearchThread(WordSquare ws) {
@@ -11,6 +11,7 @@ public class SearchThread implements Runnable {
 
     @Override
     public void run() {
+
         Dictionary dict = new Dictionary();
         Score scorer = new Score();
         String[] squareWords = ws.getSquareWords();
@@ -35,7 +36,7 @@ public class SearchThread implements Runnable {
                 pos--; //drop down a row to search the next branch
 
             } else {
-                //Add the newWord to squareWords and move on to the next row
+                //Add the new word to squareWords and move on to the next row
                 squareWords[squarePos] = match.getWord();
                 searchRows[pos][1] = (match.getDictPos() + 1);
                 pos++;

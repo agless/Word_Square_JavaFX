@@ -12,7 +12,12 @@ public class WordSquare {
     private int[][] searchRows;
     private ArrayList<String> branchList = new ArrayList<>();
     private int[] searchProgress = {0,0};
-    private ExecutorService searchPool = Executors.newFixedThreadPool(4);
+    private ExecutorService searchPool = Executors.newFixedThreadPool(6);
+    private final Object squareWordsLock = new Object();
+    private final Object searchRowsLock = new Object();
+    private final Object branchListLock = new Object();
+    private final Object addSolutionLock = new Object();
+    private final Object searchThreadCompleteLock = new Object();
 
 
     public void killSearch() {
@@ -41,21 +46,31 @@ public class WordSquare {
         return solutionList.get(pos);
     }
 
-    public synchronized String[] getSquareWords() {
-        return squareWords.clone();
-    }
-
-    public synchronized int[][] getSearchRows() {
-        return searchRows.clone();
-    }
-
-    public synchronized String getBranchWord() {
-        String branchWord = null;
-        if (branchList.size() > 0) {
-            branchWord = branchList.get(0);
-            branchList.remove(0);
+    public String[] getSquareWords() {
+        synchronized (squareWordsLock) {  //isn't this the same as synchronizing the method since there's only on lock to give out?
+            return squareWords.clone();
         }
-        return branchWord;
+    }
+
+    public int[][] getSearchRows() {
+        synchronized (searchRowsLock) {
+            int[][] copy = new int[searchRows.length][];
+            for (int i = 0; i < searchRows.length; i++) {
+                copy[i] = Arrays.copyOf(searchRows[i], searchRows[i].length);
+            }
+            return copy;
+        }
+    }
+
+    public String getBranchWord() {
+        synchronized (branchListLock) {
+            String branchWord = null;
+            if (branchList.size() > 0) {
+                branchWord = branchList.get(0);
+                branchList.remove(0);
+            }
+            return branchWord;
+        }
     }
 
     public ArrayList<Solution> getSolutionList() {
@@ -70,13 +85,17 @@ public class WordSquare {
         return searchProgress.clone();
     }
 
-    public synchronized void addSolution(Solution sol) {
-        solutionList.add(sol);
+    public void addSolution(Solution sol) {
+        synchronized (addSolutionLock) {
+            solutionList.add(sol);
+        }
     }
 
-    public synchronized void searchThreadComplete() {
-        searchProgress[0]++;
-        System.out.println(searchProgress[0] + " " + searchProgress[1]);
+    public void searchThreadComplete() {
+        synchronized (searchThreadCompleteLock) {
+            searchProgress[0]++;
+            //System.out.println(searchProgress[0] + " " + searchProgress[1]);
+        }
     }
 
     public void buildAllSolutions() {
@@ -146,7 +165,7 @@ public class WordSquare {
 
         int threadCount = branchList.size();
 
-        //Set initial search progress (0 / branchList.size())
+        //Set initial search progress (0 / threadCount)
         searchProgress[0] = 0;
         searchProgress[1] = threadCount;
 

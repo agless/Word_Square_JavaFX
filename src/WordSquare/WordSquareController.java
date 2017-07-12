@@ -157,6 +157,7 @@ public class WordSquareController {
         solPosDisplay.setText("0");
         updateSolutionCount();
         searchPane.setDisable(true);
+        firstSolutionsUpdate = true;
 
         //Loop through the checkboxes to set fixed words and blanks
         CheckBox[] lockList = {lock0, lock1, lock2, lock3, lock4, lock5};
