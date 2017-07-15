@@ -63,7 +63,8 @@ class Dictionary {
                     workingLine = reader.readLine();
 
                     //Stop at end of stream.
-                    //Though it's the first blank line, really.  (Room for improvement.)
+                    //Though it's the first blank line, really.
+                    //(Room for improvement.)
                 } while (workingLine != null);
 
                 //Randomize word banks for smoother progress bar movement
@@ -164,9 +165,7 @@ class Dictionary {
         while (true) {
 
             //If the end of the word bank is reached without a match...
-            if (pos >= wordBank.size()) {
-                return null;
-            }
+            if (pos >= wordBank.size()) return null;
 
             //Load a word to test against.
             String testWord = wordBank.get(pos);
@@ -186,7 +185,6 @@ class Dictionary {
                 pos++;
             }
         }
-
     }
 
     public int getDictionaryLength(int len) {
