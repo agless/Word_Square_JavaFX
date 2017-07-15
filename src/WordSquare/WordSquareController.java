@@ -188,6 +188,7 @@ public class WordSquareController {
         solutionList.clear();
         updateDisplay(squareWords);
         updateSolutionCount();
+        firstSolutionsUpdate = true;
         solPos = 0;
         solPosDisplay.setText("0");
         textIn.clear();
