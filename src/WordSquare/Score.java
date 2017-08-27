@@ -1,23 +1,23 @@
 package WordSquare;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 
 /**
- * Created by andyg on 5/29/2017.
+ * {@code Score} is a class to load, hold and retrieve word/score data.
+ * Word scoring is used to rank completed word squares for quality.
  */
 public class Score {
-    //A class to hold the word/score data structure and look up word scores.
-    private String word;
-    private long wordScore;
     private static HashMap<String, Long> wordScores = new HashMap<>();
     private static final String SCORES = "resources/scores.txt";
 
+    /**
+     * The constructor loads the static word/score data structure into memory
+     * only if it has not already been loaded by another {@code Score} object.
+     */
     public Score() {
-        //Load the word/score pairs into a data structure, but only if it's not already loaded.
         if (wordScores.size() <= 0) {
             try {
                 InputStreamReader ir = new InputStreamReader(getClass().getResourceAsStream(SCORES));
@@ -25,34 +25,40 @@ public class Score {
                 String workingLine;
                 String[] lineArray;
 
-                //Add each word/score pair line by line
+                // Add each word/score pair line by line
                 while (true) {
                     workingLine = reader.readLine();
                     if (workingLine == null) {
                         break;
                     } else {
                         lineArray = workingLine.split("\t");
-                        word = lineArray[0];
-                        wordScore = Long.parseLong(lineArray[1]);
+                        String word = lineArray[0];
+                        Long wordScore = Long.parseLong(lineArray[1]);
                         wordScores.put(word, wordScore);
                     }
                 }
 
-                //Close the file stream.
+                // Close the file stream.
                 reader.close();
 
             } catch (IOException ex) {
-                //Try again??? We have to have a score table.
-                //Make a popup?  With a button to try to load the score table again?
+                // Try again??? We have to have a score table.
+                // Make a popup?  With a button to try to load the score table again?
+                ex.printStackTrace();
             }
         }
     }
 
-    public long getWordScore(String lookup) {
+    /**
+     * Finds the score for a given word.
+     * @param word The word to score.
+     * @return Returns the n-gram score of the given word, if any. Otherwise,
+     * returns a score of 1.
+     */
+    public long getWordScore(String word) {
 
-        word = lookup;
         if (wordScores.containsKey(word)) {
-            wordScore = wordScores.get(word);
+            Long wordScore = wordScores.get(word);
             return wordScore;
         } else {
             return 1;
