@@ -35,7 +35,7 @@ class Dictionary {
      */
     public Dictionary() {
 
-        //Load wordBank into memory, but only if it's not already loaded.
+        // Load wordBank into memory, but only if it's not already loaded.
         if (wb2.size() <= 0) {
             try {
 

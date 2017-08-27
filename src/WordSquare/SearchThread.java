@@ -31,7 +31,7 @@ public class SearchThread implements Runnable {  //better to extend Thread?
      * {@code SearchThread} runs a brute-force algorithm to find all valid
      * word square solutions.  A 2D array {@code searchRows} acts as a road
      * map to direct construction of a valid word square.  Blank rows are
-     * filled in order (as provided by {@code SearchRows}, requesting matching
+     * filled in order (as provided by {@code SearchRows}), requesting matching
      * words from a {@code Dictionary} instance.  If a match is found, search
      * moves to the next blank row.  If no match is found, search moves back
      * a row to continue with the next valid match for the previous row.
