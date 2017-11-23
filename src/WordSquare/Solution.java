@@ -19,7 +19,7 @@ public class Solution {
     public Solution(String[] squareWords, Score scorer) {
         // Get wordScores
         solutionWords = squareWords;
-        int len = solutionWords.length;
+        int len = solutionWords[0].length();
         long[] wordScores = new long[len];
         for(int i = 0; i < len; i++) {
             String word = solutionWords[i];
@@ -28,7 +28,7 @@ public class Solution {
         }
 
         // Calculate totalScore; Find lowScore
-        for (int i = 0; i < solutionWords.length; i++) {
+        for (int i = 0; i < len; i++) {
             long thisScore = wordScores[i];
             totalScore += thisScore;
             if (i == 0) {
@@ -38,7 +38,7 @@ public class Solution {
             }
         }
         // Calculate averageScore
-        averageScore = (totalScore / solutionWords.length);
+        averageScore = (totalScore / len);
     }
 
     /**

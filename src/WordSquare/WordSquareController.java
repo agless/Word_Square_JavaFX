@@ -26,8 +26,6 @@ public class WordSquareController {
     private int solPos = 0;
     // A local copy of squareWords for the display of incomplete word squares.
     private String[] squareWords;
-    // A JavaFX Service to monitor running searches.
-    private SearchWatcher searchWatcher = new SearchWatcher();
     // During search, automatically display the first found solution.
     private boolean firstSolutionsUpdate = true;
     // Maintain references to scenes and controllers for switching between
@@ -80,9 +78,6 @@ public class WordSquareController {
      * Application at the start of the program.
      */
     public void initialize() {
-        // Reset search watcher so that progressBar can 'lock on.'
-        searchWatcher.reset();
-        searchWatcher.start();
 
         // Populate word position drop down
         wordPosition.getItems().removeAll(wordPosition.getItems());
@@ -108,9 +103,6 @@ public class WordSquareController {
         textOut.setItems(displayText);
         squareWords = ws.getSquareWords();
         updateDisplay(squareWords);
-
-        // Bind progressBar to SearchWatcher.
-        progressBar.progressProperty().bind(searchWatcher.progressProperty());
     }
 
     /*------------------------------------------------
@@ -183,10 +175,6 @@ public class WordSquareController {
         solPos = 0;
         solPosDisplay.setText("0");
         updateSolutionCount();
-        // Switch display state.
-        searchPane.setDisable(true);
-        // Prepare to jump display to the first found solution.
-        firstSolutionsUpdate = true;
 
         // Loop through the checkboxes to set fixed words and blanks
         CheckBox[] lockList = {lock0, lock1, lock2, lock3, lock4, lock5};
@@ -200,17 +188,14 @@ public class WordSquareController {
         }
         // Call WordSquare to start the search.
         ws.buildAllSolutions();
-
-        // Reinitialize search watcher for this search.
-        searchWatcher.reset();
-        searchWatcher.start();
+        solutionList = ws.getSolutionList();
+        updateSolutionCount();
     }
 
     /**
      * Stop a search in progress.
      */
     public void cancelSearch() {
-        ws.killSearch();
         sortSolutions();
     }
 
@@ -322,7 +307,6 @@ public class WordSquareController {
      */
     public void clearAll() {
         cancelSearch();
-        ws.killSearch();
         ws = new WordSquare();
         clearLocalSquareWords();
         solutionList.clear();
@@ -354,10 +338,7 @@ public class WordSquareController {
     public void showSolution() {
         clearLocalSquareWords();
         Solution sol = solutionList.get(solPos);
-        String[] solWords = sol.getSolutionWords();
-        for (int i = 0; i < solWords.length; i++) {
-            squareWords[i] = solWords[i];
-        }
+        squareWords = sol.getSolutionWords();
         updateDisplay(squareWords);
         solPosDisplay.setText(Integer.toString(solPos + 1));
     }
@@ -422,66 +403,6 @@ public class WordSquareController {
             solPos = 0;
             solPosDisplay.setText(Integer.toString(solPos + 1));
             showSolution();
-        }
-    }
-
-    /**
-     * A JavaFX Service to monitor long-running searches.  As search proceeds,
-     * {@code SearchWatcher} updates the progress bar and the total solution
-     * count for display.  A separate service is needed so that the GUI doesn't
-     * freeze when a long search is running.
-     */
-    private class SearchWatcher extends Service<Void> {
-        @Override
-        protected Task<Void> createTask() {
-            return new Task<Void>() {
-                @Override
-                protected Void call() throws Exception {
-                    // Track progress.
-                    int[] progress;
-                    // Keep running until WordSquare completes its search.
-                    do {
-                        // Update search progress.
-                        progress = ws.getSearchProgress();
-                        updateProgress(progress[0], progress[1]);
-
-                        // Make sure the GUI only automatically jumps
-                        // to the first solution found.
-                        if (firstSolutionsUpdate) {
-                            if (ws.getSolutionList().size() > 0) {
-                                firstSolutionsUpdate = false;
-                            }
-                        }
-
-                        // Get the latest solution list and ask the GUI
-                        // to update at its leisure.
-                        solutionList = ws.getSolutionList();
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                updateSolutionCount();
-                            }
-                        });
-
-                        // Wait a bit before checking for more solutions.
-                        try {
-                            Thread.sleep(200);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    } while (progress[0] < progress[1]);
-
-                    // Switch display state when search is complete.
-                    sortStyle.setDisable(false);
-                    sortButton.setDisable(false);
-                    searchPane.setDisable(false);
-                    if (solPos == 0) { sortSolutions(); }
-                    firstSolutionsUpdate = true;
-                    ws.killSearch();
-                    ws = new WordSquare();
-                    return null;
-                }
-            };
         }
     }
 }

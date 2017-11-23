@@ -10,14 +10,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * {@code Dictionary} is a class to load, hold, and search a word bank for
+ * {@code DictionaryBrute} is a class to load, hold, and search a word bank for
  * words that fit a particular word square.  The word bank is segregated
  * by word length for faster searching, since only words of identical length
- * can be used to construct valid word squares.  {@code Dictionary} returns matches
+ * can be used to construct valid word squares.  {@code DictionaryBrute} returns matches
  * in the form of {@code Match} objects, which hold a word and its word bank
  * position.
  */
-class Dictionary {
+class DictionaryBrute {
 
     // Room for improvement:  Allow user to load an alternate word bank.
     private static final String WORDBANK = "resources/wordBank.csv";
@@ -31,9 +31,9 @@ class Dictionary {
 
     /**
      * The constructor loads the static word banks into memory if they
-     * have not already been loaded by another {@code Dictionary} object.
+     * have not already been loaded by another {@code DictionaryBrute} object.
      */
-    public Dictionary() {
+    public DictionaryBrute() {
 
         // Load wordBank into memory, but only if it's not already loaded.
         if (wb2.size() <= 0) {

@@ -2,7 +2,7 @@ package WordSquare;
 
 /**
  * {@code Match} is a class to cleanly pass matching words and their
- * word bank position from a {@code Dictionary} object to a search thread.
+ * word bank position from a {@code DictionaryBrute} object to a search thread.
  */
 public class Match {
     private String word;
