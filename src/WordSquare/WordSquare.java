@@ -1,22 +1,13 @@
 package WordSquare;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * {@code WordSquare} is a class to coordinate building word squares.
  * {@code WordSquare} includes methods to accept and hold user-input words
  * to make a partial word square and includes methods to search and complete
- * word squares with word bank words.  {@code WordSquare} provides
- * multi-threaded searching for faster solution generation. {@code WordSquare}
- * also maintains a list to hold each {@code Solution} that may be found by a
- * {@code SearchThread}.  The {@code Solution} solution list is available
- * while a search is in progress.  {@code WordSquare} also provides a method
- * to get its search progress to facilitate the use of a progress bar to
- * track the progress of longer searches.
+ * word squares with word bank words.  {@code WordSquare}
+ * also maintains a list to hold each {@code Solution} that may be found.
  */
 public class WordSquare {
     /*------------------------------------------------
@@ -26,8 +17,9 @@ public class WordSquare {
     * ------------------------------------------------*/
 
     // An object to find matching words for a particular word square position.
-    // private DictionaryBrute dict = new DictionaryBrute();
     private DictionaryTernary dict = new DictionaryTernary();
+
+    // An object to score solutions according to n-gram data.
     private Score score = new Score();
 
     // The list of found solutions.
@@ -35,9 +27,6 @@ public class WordSquare {
 
     // A list of words making up a partial word square.
     private String[] squareWords = new String[6];
-
-    // A data structure to act as a road map within a search thread.
-    private int[][] searchRows;
 
     /* -----------------------------------------------
     *
@@ -89,39 +78,40 @@ public class WordSquare {
 
         // Make searchRows:
         // [squareWords position][current wordBank position][difficulty]
-        searchRows = new int[searchWordCount][3];
+        int[] searchRows = new int[searchWordCount];
         int searchRowPos = 0;
         for (int i = 0; i < len; i++) {
             if (squareWords[i] == null) {
-                searchRows[searchRowPos][0] = i;
+                searchRows[searchRowPos] = i;
                 searchRowPos++;
             }
         }
 
-        HashSet[] matches = new HashSet[searchRows.length];
+        Iterable[] matches = new Iterable[searchRows.length];
 
-        double start = System.currentTimeMillis();
+        // double start = System.currentTimeMillis();
+
         // Start the build
-        build(0, len, matches);
+        build(searchRows, 0, len, matches);
 
-        double elapsed = System.currentTimeMillis() - start;
-        System.out.println("Completed in " + elapsed / 1000 + " seconds.");
+        // double elapsed = System.currentTimeMillis() - start;
+        // System.out.println("Completed in " + elapsed / 1000 + " seconds.");
     }
 
-    private void build(int pos, int len, HashSet[] matches) {
+    private void build(int[] searchRows, int pos, int len, Iterable<String>[] matches) {
         if (pos <= searchRows.length) {
-            String pattern = getPattern(searchRows[pos][0], len);
-            matches[pos] = dict.matchWild(pattern);
-            Iterator it = matches[pos].iterator();
+            String pattern = getPattern(searchRows[pos], len);
+            matches[pos] = dict.matchPattern(pattern);
+            Iterator<String> it = matches[pos].iterator();
             while (it.hasNext()) {
-                squareWords[searchRows[pos][0]] = it.next().toString();
+                squareWords[searchRows[pos]] = it.next();
                 if (pos == searchRows.length - 1) {
                     Solution sol = new Solution(squareWords.clone(), score);
                     solutionList.add(sol);
                 }
-                else build(pos + 1, len, matches);
+                else build(searchRows, pos + 1, len, matches);
             }
-            squareWords[searchRows[pos][0]] = null;
+            squareWords[searchRows[pos]] = null;
         }
     }
 
@@ -130,24 +120,9 @@ public class WordSquare {
         for (int i = 0; i < len; i++) {
             String word = squareWords[i];
             if (word == null) sb.append('.');
-            else sb.append(Character.toString(word.charAt(pos)));
+            else sb.append(word.charAt(pos));
         }
         return sb.toString();
-    }
-
-    /*-----------------------------------------------------------
-    *
-    * Methods for SearchThread to interact with this instance.
-    *
-    * -----------------------------------------------------------*/
-
-    /**
-     * Get the partial word square composed of user-input words.
-     * @return Returns a six-position array of {@code String}s.  Some
-     * positions will be {@code null}.
-     */
-    public String[] getSquareWords() {
-            return squareWords.clone();
     }
 
     /*------------------------------------------------
@@ -155,6 +130,15 @@ public class WordSquare {
     * Additional methods to interact with member variables.
     *
     * ------------------------------------------------*/
+
+    /**
+     * Get the partial word square composed of user-input words.
+     * @return Returns a six-position array of {@code String}s.  Some
+     * positions will be {@code null}.
+     */
+    public String[] getSquareWords() {
+        return squareWords.clone();
+    }
 
     /**
      * Set a word in the current partial word square.

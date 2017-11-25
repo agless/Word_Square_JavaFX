@@ -29,8 +29,6 @@ public class DictionaryTernary {
                 }
                 workingLine = reader.readLine();
             } while (workingLine != null);
-
-            int x = 0;
         } catch (IOException ex) { ex.printStackTrace(); }
     }
 
@@ -66,10 +64,78 @@ public class DictionaryTernary {
         }
     }
 
-    public Iterable<String> getAll() {
-        HashSet<String> valid = new HashSet<>();
-        fillSet(head, new StringBuilder(), valid);
-        return valid;
+    /***
+     * A method to find all word bank words that match a given pattern.
+     * @param pattern A {@code String} in which {@code .} characters are treated
+     *                as wildcards.
+     * @return Returns an {@code Iterable} list of word bank words matching the given pattern.
+     */
+    public Iterable<String> matchPattern(String pattern) {
+        HashSet<String> matches = new HashSet<>();
+        match(pattern, head, 0, new StringBuilder(), matches);
+        return matches;
+    }
+
+    private void match(String word, Node nd, int pos, StringBuilder sb, HashSet<String> matches) {
+        char c = word.charAt(pos);
+        if (c == '.') {
+            matchWild(word, nd, pos, sb, matches);
+            return;
+        }
+        if (c == nd.value) {
+            sb.append(c);
+            if (pos == word.length() - 1) {
+                if (nd.valid) matches.add(sb.toString());
+            }
+            else if (nd.equal != null) match(word, nd.equal, ++pos, sb, matches);
+        } else if (c < nd.value) {
+            if (nd.smaller != null) match(word, nd.smaller, pos, sb, matches);
+        } else { // if (c > nd.value)
+            if (nd.bigger != null) match(word, nd.bigger, pos, sb, matches);
+        }
+    }
+
+    private void matchWild(String word, Node nd, int pos, StringBuilder sb, HashSet<String> matches) {
+        if (nd.smaller != null) matchWild(word, nd.smaller, pos, new StringBuilder(sb.toString()), matches);
+        if (nd.bigger != null) matchWild(word, nd.bigger, pos, new StringBuilder(sb.toString()), matches);
+        sb.append(nd.value);
+        if (pos == word.length() - 1) {
+            if (nd.valid) matches.add(sb.toString());
+        }
+        else if (nd.equal != null) match(word, nd.equal, ++pos, sb, matches);
+    }
+
+    /*--------------------------------------
+    *
+    * The following prefix-match methods are not required for operation of WordSquare.
+    *
+    * --------------------------------------*/
+
+    public Iterable<String> matchPrefix (String prefix) {
+        Node nd = find(prefix, head, 0);
+        if (nd == null) return null;
+        else {
+            HashSet<String> valid = new HashSet<>();
+            if (nd.valid) valid.add(prefix);
+            if (nd.equal != null) fillSet(nd.equal, new StringBuilder(prefix), valid);
+            if (valid.size() == 0) return null;
+            return valid;
+        }
+    }
+
+    private Node find(String prefix, Node nd, int pos) {
+        char c = prefix.charAt(pos);
+        if (c == nd.value) {
+            if (pos == prefix.length() - 1) return nd;
+            else if (nd.equal != null) return find(prefix, nd.equal, ++pos);
+            else return null;
+        } else if (c < nd.value) {
+            if (nd.smaller != null) return find(prefix, nd.smaller, pos);
+            else return null;
+        } else {
+            if (nd.bigger != null) return find(prefix, nd.bigger, pos);
+            else return null;
+        }
     }
 
     private void fillSet(Node nd, StringBuilder sb, HashSet<String> valid) {
@@ -79,43 +145,6 @@ public class DictionaryTernary {
         if (nd.valid) valid.add(sb.toString());
         if (nd.equal != null) fillSet(nd.equal, sb, valid);
     }
-
-    private void find (String word, Node nd, int pos, StringBuilder sb, HashSet<String> matches) {
-        char c = word.charAt(pos);
-        if (c == '.') {
-            findWild(word, nd, pos, sb, matches);
-            return;
-        }
-        if (c == nd.value) {
-            sb.append(c);
-            if (pos == word.length() - 1) {
-                if (nd.valid) matches.add(sb.toString());
-            }
-            else if (nd.equal != null) find(word, nd.equal, ++pos, sb, matches);
-        } else if (c < nd.value) {
-            if (nd.smaller != null) find(word, nd.smaller, pos, sb, matches);
-        } else { // if (c > nd.value)
-            if (nd.bigger != null) find(word, nd.bigger, pos, sb, matches);
-        }
-    }
-
-    private void findWild (String word, Node nd, int pos, StringBuilder sb, HashSet<String> matches) {
-        if (nd.smaller != null) findWild(word, nd.smaller, pos, new StringBuilder(sb.toString()), matches);
-        if (nd.bigger != null) findWild(word, nd.bigger, pos, new StringBuilder(sb.toString()), matches);
-        sb.append(nd.value);
-        if (pos == word.length() - 1) {
-            if (nd.valid) matches.add(sb.toString());
-        }
-        else if (nd.equal != null) find(word, nd.equal, ++pos, sb, matches);
-    }
-
-    public HashSet<String> matchWild(String pattern) {
-        HashSet<String> matches = new HashSet<>();
-        find(pattern, head, 0, new StringBuilder(), matches);
-        return matches;
-    }
-
-
 
     private class Node {
         private boolean valid;

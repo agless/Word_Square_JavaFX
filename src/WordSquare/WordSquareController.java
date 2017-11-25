@@ -26,8 +26,6 @@ public class WordSquareController {
     private int solPos = 0;
     // A local copy of squareWords for the display of incomplete word squares.
     private String[] squareWords;
-    // During search, automatically display the first found solution.
-    private boolean firstSolutionsUpdate = true;
     // Maintain references to scenes and controllers for switching between
     // popup and main application windows.
     private static StageReference stageReference = new StageReference();
@@ -65,11 +63,9 @@ public class WordSquareController {
     @FXML public CheckBox lock5;
     @FXML public Label totalSol;
     @FXML public TextField solPosDisplay;
-    @FXML public ProgressBar progressBar;
     @FXML public ChoiceBox sortStyle;
     @FXML public Button sortButton;
     @FXML public AnchorPane searchPane;
-    @FXML public Button cancelButton;
     @FXML public Button clearButton;
 
 
@@ -88,8 +84,6 @@ public class WordSquareController {
         sortStyle.getItems().removeAll(sortStyle.getItems());
         sortStyle.getItems().addAll("Total", "Low Word", "Average");
         sortStyle.getSelectionModel().select(1);
-        sortStyle.setDisable(true);
-        sortButton.setDisable(true);
 
         // Set up value factories for the textOut table.
         textOut.setEditable(false);
@@ -117,6 +111,13 @@ public class WordSquareController {
      * down menu.
      */
     public void setSquareWord() {
+        // Clear previous results, if any
+        if (solutionList.size() > 0) {
+            solutionList.clear();
+            ws.clearSquareWords();
+            ws.clearSolutions();
+        }
+
         // Get word and position to set.
         int pos = wordPosition.getSelectionModel().getSelectedIndex();
         String word = textIn.getText();
@@ -145,11 +146,6 @@ public class WordSquareController {
             }
         }
 
-        // Switch display state.
-        solPos = 0;
-        sortStyle.setDisable(true);
-        sortButton.setDisable(true);
-
         // Update display.
         squareWords = ws.getSquareWords();
         updateDisplay(squareWords);
@@ -169,8 +165,12 @@ public class WordSquareController {
      * Initiate the search process.
      */
     public void buildWordSquares() {
-        // Clear old solution list, if any
-        solutionList.clear();
+        // Clear previous results, if any
+        if (solutionList.size() > 0) {
+            solutionList.clear();
+            ws.clearSolutions();
+            ws.clearSquareWords();
+        }
         // Clear display elements for new solutions.
         solPos = 0;
         solPosDisplay.setText("0");
@@ -190,12 +190,6 @@ public class WordSquareController {
         ws.buildAllSolutions();
         solutionList = ws.getSolutionList();
         updateSolutionCount();
-    }
-
-    /**
-     * Stop a search in progress.
-     */
-    public void cancelSearch() {
         sortSolutions();
     }
 
@@ -306,13 +300,11 @@ public class WordSquareController {
      * and reset the GUI elements.
      */
     public void clearAll() {
-        cancelSearch();
         ws = new WordSquare();
         clearLocalSquareWords();
         solutionList.clear();
         updateDisplay(squareWords);
         updateSolutionCount();
-        firstSolutionsUpdate = true;
         solPos = 0;
         solPosDisplay.setText("0");
         textIn.clear();
@@ -325,11 +317,6 @@ public class WordSquareController {
         // Get the current number of solutions and update the GUI.
         int size = solutionList.size();
         totalSol.setText(Integer.toString(size));
-        // If this is the first solution found, show it right away.
-        if ((size > 0) && (firstSolutionsUpdate)) {
-            showSolution();
-            firstSolutionsUpdate = false;
-        }
     }
 
     /**
