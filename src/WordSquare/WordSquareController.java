@@ -26,10 +26,6 @@ public class WordSquareController {
     private int solPos = 0;
     // A local copy of squareWords for the display of incomplete word squares.
     private String[] squareWords;
-    // A JavaFX Service to monitor running searches.
-    private SearchWatcher searchWatcher = new SearchWatcher();
-    // During search, automatically display the first found solution.
-    private boolean firstSolutionsUpdate = true;
     // Maintain references to scenes and controllers for switching between
     // popup and main application windows.
     private static StageReference stageReference = new StageReference();
@@ -67,11 +63,9 @@ public class WordSquareController {
     @FXML public CheckBox lock5;
     @FXML public Label totalSol;
     @FXML public TextField solPosDisplay;
-    @FXML public ProgressBar progressBar;
     @FXML public ChoiceBox sortStyle;
     @FXML public Button sortButton;
     @FXML public AnchorPane searchPane;
-    @FXML public Button cancelButton;
     @FXML public Button clearButton;
 
 
@@ -80,9 +74,6 @@ public class WordSquareController {
      * Application at the start of the program.
      */
     public void initialize() {
-        // Reset search watcher so that progressBar can 'lock on.'
-        searchWatcher.reset();
-        searchWatcher.start();
 
         // Populate word position drop down
         wordPosition.getItems().removeAll(wordPosition.getItems());
@@ -93,8 +84,6 @@ public class WordSquareController {
         sortStyle.getItems().removeAll(sortStyle.getItems());
         sortStyle.getItems().addAll("Total", "Low Word", "Average");
         sortStyle.getSelectionModel().select(1);
-        sortStyle.setDisable(true);
-        sortButton.setDisable(true);
 
         // Set up value factories for the textOut table.
         textOut.setEditable(false);
@@ -108,9 +97,6 @@ public class WordSquareController {
         textOut.setItems(displayText);
         squareWords = ws.getSquareWords();
         updateDisplay(squareWords);
-
-        // Bind progressBar to SearchWatcher.
-        progressBar.progressProperty().bind(searchWatcher.progressProperty());
     }
 
     /*------------------------------------------------
@@ -125,6 +111,13 @@ public class WordSquareController {
      * down menu.
      */
     public void setSquareWord() {
+        // Clear previous results, if any
+        if (solutionList.size() > 0) {
+            solutionList.clear();
+            ws.clearSquareWords();
+            ws.clearSolutions();
+        }
+
         // Get word and position to set.
         int pos = wordPosition.getSelectionModel().getSelectedIndex();
         String word = textIn.getText();
@@ -153,11 +146,6 @@ public class WordSquareController {
             }
         }
 
-        // Switch display state.
-        solPos = 0;
-        sortStyle.setDisable(true);
-        sortButton.setDisable(true);
-
         // Update display.
         squareWords = ws.getSquareWords();
         updateDisplay(squareWords);
@@ -177,16 +165,16 @@ public class WordSquareController {
      * Initiate the search process.
      */
     public void buildWordSquares() {
-        // Clear old solution list, if any
-        solutionList.clear();
+        // Clear previous results, if any
+        if (solutionList.size() > 0) {
+            solutionList.clear();
+            ws.clearSolutions();
+            ws.clearSquareWords();
+        }
         // Clear display elements for new solutions.
         solPos = 0;
         solPosDisplay.setText("0");
         updateSolutionCount();
-        // Switch display state.
-        searchPane.setDisable(true);
-        // Prepare to jump display to the first found solution.
-        firstSolutionsUpdate = true;
 
         // Loop through the checkboxes to set fixed words and blanks
         CheckBox[] lockList = {lock0, lock1, lock2, lock3, lock4, lock5};
@@ -200,17 +188,8 @@ public class WordSquareController {
         }
         // Call WordSquare to start the search.
         ws.buildAllSolutions();
-
-        // Reinitialize search watcher for this search.
-        searchWatcher.reset();
-        searchWatcher.start();
-    }
-
-    /**
-     * Stop a search in progress.
-     */
-    public void cancelSearch() {
-        ws.killSearch();
+        solutionList = ws.getSolutionList();
+        updateSolutionCount();
         sortSolutions();
     }
 
@@ -321,14 +300,11 @@ public class WordSquareController {
      * and reset the GUI elements.
      */
     public void clearAll() {
-        cancelSearch();
-        ws.killSearch();
         ws = new WordSquare();
         clearLocalSquareWords();
         solutionList.clear();
         updateDisplay(squareWords);
         updateSolutionCount();
-        firstSolutionsUpdate = true;
         solPos = 0;
         solPosDisplay.setText("0");
         textIn.clear();
@@ -341,11 +317,6 @@ public class WordSquareController {
         // Get the current number of solutions and update the GUI.
         int size = solutionList.size();
         totalSol.setText(Integer.toString(size));
-        // If this is the first solution found, show it right away.
-        if ((size > 0) && (firstSolutionsUpdate)) {
-            showSolution();
-            firstSolutionsUpdate = false;
-        }
     }
 
     /**
@@ -354,10 +325,7 @@ public class WordSquareController {
     public void showSolution() {
         clearLocalSquareWords();
         Solution sol = solutionList.get(solPos);
-        String[] solWords = sol.getSolutionWords();
-        for (int i = 0; i < solWords.length; i++) {
-            squareWords[i] = solWords[i];
-        }
+        squareWords = sol.getSolutionWords();
         updateDisplay(squareWords);
         solPosDisplay.setText(Integer.toString(solPos + 1));
     }
@@ -422,66 +390,6 @@ public class WordSquareController {
             solPos = 0;
             solPosDisplay.setText(Integer.toString(solPos + 1));
             showSolution();
-        }
-    }
-
-    /**
-     * A JavaFX Service to monitor long-running searches.  As search proceeds,
-     * {@code SearchWatcher} updates the progress bar and the total solution
-     * count for display.  A separate service is needed so that the GUI doesn't
-     * freeze when a long search is running.
-     */
-    private class SearchWatcher extends Service<Void> {
-        @Override
-        protected Task<Void> createTask() {
-            return new Task<Void>() {
-                @Override
-                protected Void call() throws Exception {
-                    // Track progress.
-                    int[] progress;
-                    // Keep running until WordSquare completes its search.
-                    do {
-                        // Update search progress.
-                        progress = ws.getSearchProgress();
-                        updateProgress(progress[0], progress[1]);
-
-                        // Make sure the GUI only automatically jumps
-                        // to the first solution found.
-                        if (firstSolutionsUpdate) {
-                            if (ws.getSolutionList().size() > 0) {
-                                firstSolutionsUpdate = false;
-                            }
-                        }
-
-                        // Get the latest solution list and ask the GUI
-                        // to update at its leisure.
-                        solutionList = ws.getSolutionList();
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                updateSolutionCount();
-                            }
-                        });
-
-                        // Wait a bit before checking for more solutions.
-                        try {
-                            Thread.sleep(200);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    } while (progress[0] < progress[1]);
-
-                    // Switch display state when search is complete.
-                    sortStyle.setDisable(false);
-                    sortButton.setDisable(false);
-                    searchPane.setDisable(false);
-                    if (solPos == 0) { sortSolutions(); }
-                    firstSolutionsUpdate = true;
-                    ws.killSearch();
-                    ws = new WordSquare();
-                    return null;
-                }
-            };
         }
     }
 }

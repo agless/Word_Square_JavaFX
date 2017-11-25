@@ -36,7 +36,6 @@
                   <Label layoutX="80.0" layoutY="272.0" text="of" />
                   <Label fx:id="totalSol" layoutX="103.0" layoutY="272.0" prefHeight="17.0" prefWidth="34.0" text="0" />
                   <TextField fx:id="solPosDisplay" alignment="CENTER_RIGHT" layoutX="21.0" layoutY="268.0" onAction="#jumpToSolution" prefHeight="25.0" prefWidth="52.0" text="0" />
-                  <ProgressBar fx:id="progressBar" layoutX="62.0" layoutY="49.0" prefHeight="18.0" prefWidth="150.0" progress="0.0" />
                   <ChoiceBox fx:id="sortStyle" layoutX="136.0" layoutY="300.0" prefHeight="25.0" prefWidth="91.0" />
                   <Button fx:id="sortButton" layoutX="226.0" layoutY="300.0" mnemonicParsing="false" onAction="#sortSolutions" text="Go" />
                   <Label layoutX="73.0" layoutY="304.0" prefHeight="17.0" prefWidth="61.0" text="Rank By:" />
@@ -46,7 +45,6 @@
                   <CheckBox fx:id="lock3" layoutX="33.0" layoutY="177.0" mnemonicParsing="false" />
                   <CheckBox fx:id="lock4" layoutX="33.0" layoutY="200.0" mnemonicParsing="false" />
                   <CheckBox fx:id="lock5" layoutX="33.0" layoutY="225.0" mnemonicParsing="false" />
-                  <Button fx:id="cancelButton" layoutX="216.0" layoutY="46.0" mnemonicParsing="false" onAction="#cancelSearch" text="Cancel" />
                </children>
             </AnchorPane>
         </items>
