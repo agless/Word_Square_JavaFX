@@ -10,9 +10,11 @@ public class DictionaryTernary {
 
     public DictionaryTernary() {
         head = new Node();
-        head.value = 'o';  // Near the center of the alphabet & second most common initial letter.
 
         try {
+            /* COULD INCREASE EFFICIENCY by randomizing the word bank
+             * before insert.  Ordered input is worst case for tree structures. */
+
             // Open word bank file as a stream.
             InputStreamReader ir = new InputStreamReader(
                     getClass().getResourceAsStream("resources/wordBank.csv"));
@@ -111,13 +113,18 @@ public class DictionaryTernary {
     *
     * --------------------------------------*/
 
-    public Iterable<String> matchPrefix (String prefix) {
+    public Iterable<String> matchPrefix(String prefix) {
+        // Get head of subtree for this prefix
         Node nd = find(prefix, head, 0);
         if (nd == null) return null;
         else {
+            // Create an iterable set.
             HashSet<String> valid = new HashSet<>();
+            // If prefix is a valid word, add it
             if (nd.valid) valid.add(prefix);
+            // Fill set with all valid words in prefix subtree
             if (nd.equal != null) fillSet(nd.equal, new StringBuilder(prefix), valid);
+            // Return
             if (valid.size() == 0) return null;
             return valid;
         }
